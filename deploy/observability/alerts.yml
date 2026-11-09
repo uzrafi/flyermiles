@@ -1,0 +1,69 @@
+# SLOs and alerts. The same rules are installed on Kubernetes as a PrometheusRule
+# (deploy/k8s/monitoring/prometheus-rules.yaml).
+groups:
+  - name: flyermiles-slo
+    rules:
+      - record: flyermiles:balance_reads_under_100ms:ratio_5m
+        expr: |
+          sum(rate(http_server_requests_seconds_bucket{application="query-service", uri="/members/{id}/balance", le="0.1"}[5m]))
+          /
+          sum(rate(http_server_requests_seconds_count{application="query-service", uri="/members/{id}/balance"}[5m]))
+
+      - record: flyermiles:earn_within_5s:ratio_5m
+        expr: |
+          sum(rate(flyermiles_earn_latency_seconds_bucket{le="5.0"}[5m]))
+          /
+          sum(rate(flyermiles_earn_latency_seconds_count[5m]))
+
+      - alert: BalanceReadLatencySLOBreach
+        expr: flyermiles:balance_reads_under_100ms:ratio_5m < 0.99
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Fewer than 99% of balance reads completed in under 100 ms"
+          description: "Over the last 5m, {{ $value | humanizePercentage }} of balance reads were under 100 ms."
+
+      - alert: EarnLatencySLOBreach
+        expr: flyermiles:earn_within_5s:ratio_5m < 0.99
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Points are taking longer than 5 s to reach the balance"
+          description: "{{ $value | humanizePercentage }} of earns were visible within 5 s."
+
+  - name: flyermiles-correctness
+    rules:
+      - alert: ReconciliationMismatch
+        expr: reconciliation_mismatch_total > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "Reconciliation found {{ $value }} failing checks"
+          description: "Ledger, read model and Kafka totals disagree. See the reconciliation job logs."
+
+      - alert: ReconciliationNotRunning
+        expr: time() - reconciliation_last_run_timestamp_seconds > 26 * 3600
+        labels: { severity: warning }
+        annotations:
+          summary: "The reconciliation job has not reported for over 26 hours"
+
+      - alert: ProjectionSeqGap
+        expr: increase(flyermiles_projection_gaps_total[10m]) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "The read model saw a gap in a member's ledger sequence"
+
+  - name: flyermiles-pipeline
+    rules:
+      - alert: ConsumerLagHigh
+        expr: sum by (consumergroup) (kafka_consumergroup_lag) > 10000
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Consumer group {{ $labels.consumergroup }} is {{ $value }} messages behind"
+
+      - alert: LedgerPublishBacklog
+        expr: max(ledger_publish_backlog) > 5000
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Ledger entries are committed but not reaching ledger.events"

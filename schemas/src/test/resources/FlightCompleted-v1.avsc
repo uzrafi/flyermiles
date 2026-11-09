@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "FlightCompleted",
+  "namespace": "dev.flyermiles.avro",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "memberId", "type": "string"},
+    {"name": "flightNumber", "type": "string"},
+    {"name": "origin", "type": "string"},
+    {"name": "destination", "type": "string"},
+    {"name": "distanceMiles", "type": "int"},
+    {"name": "fareClass", "type": "string"},
+    {"name": "completedAtMs", "type": "long"}
+  ]
+}

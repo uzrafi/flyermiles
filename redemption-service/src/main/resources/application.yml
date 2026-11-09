@@ -1,0 +1,40 @@
+server:
+  port: 8083
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 400
+
+spring:
+  application:
+    name: redemption-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${REDEMPTION_DB_URL:jdbc:postgresql://localhost:5432/redemptions}
+    username: ${DB_USER:flyermiles}
+    password: ${DB_PASSWORD:flyermiles}
+
+redemption:
+  ledger-url: ${LEDGER_URL:http://localhost:8082}
+  max-attempts: 25
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

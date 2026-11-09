@@ -1,0 +1,46 @@
+server:
+  port: 8086
+  shutdown: graceful
+
+spring:
+  application:
+    name: earning-engine
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9094}
+    properties:
+      apicurio.registry.url: ${REGISTRY_URL:http://localhost:8080/apis/registry/v2}
+      apicurio.registry.auto-register: true
+      apicurio.registry.use-specific-avro-reader: true
+    streams:
+      application-id: earning-engine
+      state-dir: ${STATE_DIR:/tmp/kafka-streams}
+      replication-factor: ${STREAMS_REPLICATION_FACTOR:-1}
+      properties:
+        # Read input, update the RocksDB stores and write output in one Kafka transaction.
+        processing.guarantee: exactly_once_v2
+        commit.interval.ms: ${COMMIT_INTERVAL_MS:100}
+        num.stream.threads: ${STREAM_THREADS:1}
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        # Keep a warm copy of state on another instance so a pod kill doesn't mean a full restore.
+        num.standby.replicas: ${STANDBY_REPLICAS:0}
+        producer.linger.ms: 5
+
+earning:
+  zone: America/Toronto
+  late-flight-grace: P7D
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,kafkaStreams
+  metrics:
+    tags:
+      application: ${spring.application.name}

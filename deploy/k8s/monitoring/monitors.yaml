@@ -1,0 +1,29 @@
+# Scrape targets that aren't created by a service chart.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-collector-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+  endpoints:
+    - port: prom-exporter
+      interval: 10s
+---
+# Strimzi's Kafka Exporter: consumer group lag per topic/partition.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: strimzi-kafka-exporter
+  namespace: flyermiles
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+      strimzi.io/name: flyermiles-kafka-exporter
+  podMetricsEndpoints:
+    - port: tcp-prometheus
+      path: /metrics
+      interval: 10s

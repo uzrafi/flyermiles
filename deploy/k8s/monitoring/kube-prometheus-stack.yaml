@@ -1,0 +1,67 @@
+# helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring -f this-file
+prometheus:
+  prometheusSpec:
+    # Pick up ServiceMonitors/PodMonitors/PrometheusRules from every namespace, not just this release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    enableRemoteWriteReceiver: true   # Tempo's metrics generator writes span metrics here
+    enableFeatures: [exemplar-storage]
+    scrapeInterval: 10s
+    evaluationInterval: 10s
+    retention: 2d
+    resources:
+      requests: { cpu: 200m, memory: 768Mi }
+      limits: { memory: 1536Mi }
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { memory: 64Mi }
+
+grafana:
+  adminPassword: flyermiles
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring:3100
+      jsonData:
+        derivedFields:
+          - name: TraceID
+            datasourceUid: tempo
+            matcherType: label
+            matcherRegex: trace_id
+            url: "$${__value.raw}"
+            urlDisplayLabel: View trace
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring:3100
+      jsonData:
+        serviceMap:
+          datasourceUid: prometheus
+        nodeGraph:
+          enabled: true
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+          customQuery: true
+          query: '{service_name="$${__span.tags["service.name"]}"} | trace_id="$${__trace.traceId}"'
+  # The chart's default Prometheus datasource already has uid "prometheus", which the dashboard uses.
+
+kube-state-metrics:
+  resources:
+    requests: { memory: 64Mi }

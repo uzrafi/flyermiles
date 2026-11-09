@@ -1,0 +1,108 @@
+# One SCRAM user per service, with only the ACLs it needs. The User Operator writes each password
+# (and a ready-made sasl.jaas.config) into a Secret named after the user.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: flight-activity-simulator
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: flight.completed }
+        operations: [Describe, Write]
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: member-service
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: member.profiles }
+        operations: [Describe, Write]
+      - resource: { type: topic, name: tier.changed }
+        operations: [Describe, Read]
+      - resource: { type: group, name: member-service }
+        operations: [Read]
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: earning-engine
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: flight.completed }
+        operations: [Describe, Read]
+      - resource: { type: topic, name: member.profiles }
+        operations: [Describe, Read]
+      - resource: { type: topic, name: points.earned }
+        operations: [Describe, Write]
+      - resource: { type: topic, name: tier.changed }
+        operations: [Describe, Write]
+      # Kafka Streams' own changelog and repartition topics: <application.id>-...
+      - resource: { type: topic, name: earning-engine-, patternType: prefix }
+        operations: [All]
+      - resource: { type: group, name: earning-engine, patternType: prefix }
+        operations: [All]
+      # exactly_once_v2 transactions
+      - resource: { type: transactionalId, name: earning-engine, patternType: prefix }
+        operations: [All]
+      - resource: { type: cluster }
+        operations: [Describe, DescribeConfigs, IdempotentWrite]
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: ledger-service
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: points.earned }
+        operations: [Describe, Read]
+      - resource: { type: group, name: ledger-service }
+        operations: [Read]
+      - resource: { type: topic, name: ledger.events }
+        operations: [Describe, Write]
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: query-service
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: ledger.events }
+        operations: [Describe, Read]
+      # Read + Describe on the group: consuming, plus rewinding it for a rebuild and KEDA's lag check.
+      - resource: { type: group, name: query-service }
+        operations: [Read, Describe]
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: reconciliation
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  authentication: { type: scram-sha-512 }
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: flight.completed }
+        operations: [Describe, Read]
+      - resource: { type: topic, name: points.earned }
+        operations: [Describe, Read]

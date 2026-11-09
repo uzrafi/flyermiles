@@ -1,0 +1,62 @@
+{{- if .Values.autoscaling.enabled }}
+# KEDA reads the consumer group's lag on ledger.events with the query-service's own SCRAM user.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: query-service-keda-kafka
+type: Opaque
+stringData:
+  sasl: scram_sha512
+  username: {{ .Values.kafkaUser }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: query-service-kafka
+spec:
+  secretTargetRef:
+    - parameter: sasl
+      name: query-service-keda-kafka
+      key: sasl
+    - parameter: username
+      name: query-service-keda-kafka
+      key: username
+    - parameter: password
+      name: {{ .Values.kafkaUser }}
+      key: password
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: query-service
+spec:
+  scaleTargetRef:
+    name: query-service
+  minReplicaCount: {{ .Values.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.autoscaling.maxReplicas }}
+  pollingInterval: {{ .Values.autoscaling.pollingInterval }}
+  cooldownPeriod: {{ .Values.autoscaling.cooldownPeriod }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Pods
+              value: 2
+              periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 60
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: {{ .Values.global.kafkaBootstrap }}
+        consumerGroup: {{ .Values.autoscaling.consumerGroup }}
+        topic: {{ .Values.autoscaling.topic }}
+        lagThreshold: {{ .Values.autoscaling.lagThreshold | quote }}
+        # never more replicas than partitions
+        allowIdleConsumers: "false"
+        offsetResetPolicy: earliest
+      authenticationRef:
+        name: query-service-kafka
+{{- end }}

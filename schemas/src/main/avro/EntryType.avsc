@@ -1,0 +1,6 @@
+{
+  "type": "enum",
+  "name": "EntryType",
+  "namespace": "dev.flyermiles.avro",
+  "symbols": ["EARNED", "REDEEMED", "REVERSED"]
+}

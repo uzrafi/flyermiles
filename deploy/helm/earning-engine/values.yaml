@@ -1,0 +1,55 @@
+global:
+  kafkaBootstrap: flyermiles-kafka-bootstrap:9092
+  registryUrl: http://apicurio:8080/apis/registry/v2
+  otel:
+    enabled: true
+    endpoint: http://otel-collector.monitoring:4317
+
+image:
+  repository: flyermiles/earning-engine
+  tag: dev
+  pullPolicy: IfNotPresent
+
+replicas: 2
+port: 8086
+javaOpts: "-Xms128m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+
+# Name of the Strimzi KafkaUser whose SCRAM secret this service authenticates with.
+kafkaUser: earning-engine
+
+database: null
+
+# Non-secret settings, mounted as environment variables through a ConfigMap.
+config:
+  STATE_DIR: "/var/lib/kafka-streams"
+  STREAMS_REPLICATION_FACTOR: "3"
+  STANDBY_REPLICAS: "1"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 400Mi
+  limits:
+    memory: 512Mi
+
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+serviceMonitor:
+  enabled: true
+
+terminationGracePeriodSeconds: 45
+
+autoscaling:
+  enabled: false
+
+# Kafka Streams state (RocksDB). emptyDir: a replaced pod restores from the changelog topics,
+# helped by the standby replica on the other instance.
+volumes:
+  - name: streams-state
+    emptyDir:
+      sizeLimit: 2Gi
+volumeMounts:
+  - name: streams-state
+    mountPath: /var/lib/kafka-streams

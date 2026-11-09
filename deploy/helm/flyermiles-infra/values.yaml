@@ -1,0 +1,23 @@
+postgres:
+  image: postgres:16-alpine
+  user: flyermiles
+  password: flyermiles
+  storage: 5Gi
+  databases: [members, ledger, redemptions, query]
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 1Gi }
+
+redis:
+  image: redis:7.4-alpine
+  maxMemory: 128mb
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 192Mi }
+
+apicurio:
+  image: apicurio/apicurio-registry-mem:2.6.5.Final
+  compatibility: BACKWARD
+  resources:
+    requests: { cpu: 100m, memory: 384Mi }
+    limits: { memory: 640Mi }

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "MemberProfile",
+  "namespace": "dev.flyermiles.avro",
+  "fields": [
+    {"name": "memberId", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "tier", "type": "Tier"},
+    {"name": "updatedAtMs", "type": "long"}
+  ]
+}

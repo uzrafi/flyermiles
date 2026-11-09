@@ -1,0 +1,26 @@
+{{- if .Values.networkPolicy.enabled }}
+# Only the redemption-service may call the ledger's API (and Prometheus may scrape it).
+# The ledger's own Kafka and Postgres traffic is egress and unaffected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ledger-service-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ledger-service
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redemption-service
+      ports:
+        - port: {{ .Values.port }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: {{ .Values.port }}
+{{- end }}

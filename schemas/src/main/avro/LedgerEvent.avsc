@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "LedgerEvent",
+  "namespace": "dev.flyermiles.avro",
+  "fields": [
+    {"name": "entryId", "type": "string"},
+    {"name": "memberId", "type": "string"},
+    {"name": "seq", "type": "long"},
+    {"name": "type", "type": "EntryType"},
+    {"name": "points", "type": "long", "doc": "signed"},
+    {"name": "balanceAfter", "type": "long"},
+    {"name": "reason", "type": "string", "doc": "JSON"},
+    {"name": "occurredAtMs", "type": "long"},
+    {"name": "sourceTimestampMs", "type": ["null", "long"], "default": null, "doc": "when the triggering business event happened (flight completion), for end-to-end latency"}
+  ]
+}

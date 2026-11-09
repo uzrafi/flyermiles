@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "TierChanged",
+  "namespace": "dev.flyermiles.avro",
+  "fields": [
+    {"name": "memberId", "type": "string"},
+    {"name": "previousTier", "type": "Tier"},
+    {"name": "newTier", "type": "Tier"},
+    {"name": "qualifyingMiles", "type": "long"},
+    {"name": "year", "type": "int"},
+    {"name": "changedAtMs", "type": "long"}
+  ]
+}

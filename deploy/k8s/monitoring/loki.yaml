@@ -1,0 +1,33 @@
+# helm install loki grafana/loki -n monitoring -f this-file   (single binary, filesystem storage)
+deploymentMode: SingleBinary
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  limits_config:
+    allow_structured_metadata: true
+    volume_enabled: true
+singleBinary:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 768Mi }
+backend: { replicas: 0 }
+read: { replicas: 0 }
+write: { replicas: 0 }
+chunksCache: { enabled: false }
+resultsCache: { enabled: false }
+gateway: { enabled: false }
+lokiCanary: { enabled: false }
+test: { enabled: false }

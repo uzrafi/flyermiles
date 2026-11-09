@@ -1,0 +1,19 @@
+# helm install tempo grafana/tempo -n monitoring -f this-file   (single binary)
+tempo:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: http://kube-prometheus-stack-prometheus.monitoring:9090/api/v1/write
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [service-graphs, span-metrics]
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }

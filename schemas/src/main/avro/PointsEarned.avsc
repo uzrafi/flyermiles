@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "PointsEarned",
+  "namespace": "dev.flyermiles.avro",
+  "fields": [
+    {"name": "eventId", "type": "string", "doc": "equals the source FlightCompleted.eventId, so the ledger can dedupe"},
+    {"name": "memberId", "type": "string"},
+    {"name": "flightNumber", "type": "string"},
+    {"name": "fareClass", "type": "string"},
+    {"name": "distanceMiles", "type": "int"},
+    {"name": "tier", "type": "Tier"},
+    {"name": "points", "type": "long"},
+    {"name": "flightCompletedAtMs", "type": "long"}
+  ]
+}

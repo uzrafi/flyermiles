@@ -1,0 +1,48 @@
+server:
+  port: 8081
+  shutdown: graceful
+
+spring:
+  application:
+    name: member-service
+  datasource:
+    url: ${MEMBER_DB_URL:jdbc:postgresql://localhost:5432/members}
+    username: ${DB_USER:flyermiles}
+    password: ${DB_PASSWORD:flyermiles}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.apicurio.registry.serde.avro.AvroKafkaSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+    consumer:
+      group-id: member-service
+      auto-offset-reset: earliest
+      isolation-level: read_committed
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: io.apicurio.registry.serde.avro.AvroKafkaDeserializer
+    properties:
+      apicurio.registry.url: ${REGISTRY_URL:http://localhost:8080/apis/registry/v2}
+      apicurio.registry.auto-register: true
+      apicurio.registry.use-specific-avro-reader: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  metrics:
+    tags:
+      application: ${spring.application.name}

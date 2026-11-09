@@ -1,0 +1,43 @@
+global:
+  kafkaBootstrap: flyermiles-kafka-bootstrap:9092
+  registryUrl: http://apicurio:8080/apis/registry/v2
+  otel:
+    enabled: true
+    endpoint: http://otel-collector.monitoring:4317
+
+image:
+  repository: flyermiles/flight-activity-simulator
+  tag: dev
+  pullPolicy: IfNotPresent
+
+replicas: 1
+port: 8085
+javaOpts: "-Xms128m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+
+# Name of the Strimzi KafkaUser whose SCRAM secret this service authenticates with.
+kafkaUser: flight-activity-simulator
+
+database: null
+
+# Non-secret settings, mounted as environment variables through a ConfigMap.
+config:
+  MEMBER_SERVICE_URL: "http://member-service:8081"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 400Mi
+  limits:
+    memory: 512Mi
+
+pdb:
+  enabled: false
+  maxUnavailable: 1
+
+serviceMonitor:
+  enabled: true
+
+terminationGracePeriodSeconds: 45
+
+autoscaling:
+  enabled: false

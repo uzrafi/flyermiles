@@ -1,0 +1,6 @@
+apiVersion: v2
+name: reconciliation-job
+description: Nightly (and on-demand) proof that ledger, read model and Kafka totals agree
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

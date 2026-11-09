@@ -1,0 +1,7 @@
+{
+  "type": "enum",
+  "name": "Tier",
+  "namespace": "dev.flyermiles.avro",
+  "symbols": ["BASE", "SILVER", "GOLD", "PLATINUM"],
+  "default": "BASE"
+}

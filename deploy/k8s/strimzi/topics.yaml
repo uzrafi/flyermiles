@@ -1,0 +1,61 @@
+# flight.completed and member.profiles MUST have the same partition count: the earning engine's
+# stream-table join requires co-partitioned inputs.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: flight.completed
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: -1
+    min.insync.replicas: 2
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: member.profiles
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    cleanup.policy: compact
+    min.compaction.lag.ms: 0
+    min.insync.replicas: 2
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: tier.changed
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    min.insync.replicas: 2
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: points.earned
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: -1
+    min.insync.replicas: 2
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ledger.events
+  labels: { strimzi.io/cluster: flyermiles }
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: -1  # the read model is rebuilt by replaying this topic
+    min.insync.replicas: 2

@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Application metrics (Micrometer) from each service's Actuator endpoint.
+  - job_name: flyermiles
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - member-service:8081
+          - ledger-service:8082
+          - redemption-service:8083
+          - query-service:8084
+          - flight-activity-simulator:8085
+
+  # The engine may be scaled to several containers; Docker DNS returns all of them.
+  - job_name: earning-engine
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [earning-engine]
+        type: A
+        port: 8086
+        refresh_interval: 10s
+
+  # Metrics the OpenTelemetry agents send through the collector.
+  - job_name: otel-collector
+    static_configs:
+      - targets: [otel-collector:8889]
+
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets: [pushgateway:9091]
+
+  - job_name: kafka-exporter
+    static_configs:
+      - targets: [kafka-exporter:9308]

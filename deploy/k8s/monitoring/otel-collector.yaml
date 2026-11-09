@@ -1,0 +1,56 @@
+# helm install otel-collector open-telemetry/opentelemetry-collector -n monitoring -f this-file
+mode: deployment
+fullnameOverride: otel-collector
+image:
+  repository: otel/opentelemetry-collector-contrib
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { memory: 512Mi }
+ports:
+  prom-exporter:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc: { endpoint: "0.0.0.0:4317" }
+        http: { endpoint: "0.0.0.0:4318" }
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+    batch: {}
+    # Adds k8s.pod.name, k8s.deployment.name etc. to every span, log and metric.
+    k8sattributes: {}
+  exporters:
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+      resource_to_telemetry_conversion:
+        enabled: true
+    otlp/tempo:
+      endpoint: tempo.monitoring:4317
+      tls:
+        insecure: true
+    otlphttp/loki:
+      endpoint: http://loki.monitoring:3100/otlp
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [otlp/tempo]
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [prometheus]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [otlphttp/loki]
+presets:
+  kubernetesAttributes:
+    enabled: true

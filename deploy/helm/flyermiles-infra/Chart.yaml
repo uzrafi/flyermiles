@@ -1,0 +1,5 @@
+apiVersion: v2
+name: flyermiles-infra
+description: Postgres, Redis and the Apicurio schema registry for FlyerMiles (Kafka itself is run by Strimzi)
+type: application
+version: 0.1.0

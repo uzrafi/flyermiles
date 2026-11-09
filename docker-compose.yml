@@ -1,0 +1,225 @@
+# Local development and benchmarks.
+#   infra only:            docker compose up -d
+#   + services:            docker compose --profile apps up -d
+#   + monitoring:          docker compose --profile apps --profile obs up -d
+#   reconciliation:        docker compose run --rm reconciliation-job
+#   scale the engine:      docker compose --profile apps up -d --scale earning-engine=3
+
+x-java-service: &java-service
+  restart: unless-stopped
+  profiles: [apps]
+  depends_on:
+    kafka-init: { condition: service_completed_successfully }
+    postgres: { condition: service_healthy }
+    apicurio: { condition: service_started }
+  mem_limit: 768m
+  environment: &java-env
+    KAFKA_BOOTSTRAP: kafka:9092
+    REGISTRY_URL: http://apicurio:8080/apis/registry/v2
+    DB_USER: flyermiles
+    DB_PASSWORD: flyermiles
+    JAVA_TOOL_OPTIONS: -Xms128m -Xmx384m -XX:+ExitOnOutOfMemoryError
+    OTEL_JAVAAGENT_ENABLED: ${OTEL_ENABLED:-true}
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    OTEL_RESOURCE_ATTRIBUTES: deployment.environment=compose
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: flyermiles
+      POSTGRES_PASSWORD: flyermiles
+      POSTGRES_DB: flyermiles
+    command: ["postgres", "-c", "max_connections=300", "-c", "shared_buffers=256MB", "-c", "track_io_timing=on"]
+    ports: ["5432:5432"]
+    volumes:
+      - ./deploy/compose/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flyermiles"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+    ports: ["6379:6379"]
+
+  kafka:
+    image: apache/kafka:3.8.0
+    hostname: kafka
+    ports: ["9094:9094"]
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: -Xmx1g -Xms1g
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 5s
+      retries: 30
+
+  kafka-init:
+    image: apache/kafka:3.8.0
+    depends_on:
+      kafka: { condition: service_healthy }
+    environment:
+      PARTITIONS: ${PARTITIONS:-6}
+    volumes:
+      - ./deploy/compose/create-topics.sh:/create-topics.sh:ro
+    entrypoint: ["bash", "/create-topics.sh"]
+    restart: "no"
+
+  apicurio:
+    image: apicurio/apicurio-registry-mem:2.6.5.Final
+    ports: ["8080:8080"]
+    environment:
+      REGISTRY_RULES_GLOBAL_COMPATIBILITY: BACKWARD
+      QUARKUS_HTTP_PORT: 8080
+
+  # ---------------------------------------------------------------- services
+  member-service:
+    <<: *java-service
+    build: { context: ., args: { MODULE: member-service } }
+    image: flyermiles/member-service:dev
+    ports: ["8081:8081"]
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: member-service
+      MEMBER_DB_URL: jdbc:postgresql://postgres:5432/members
+
+  ledger-service:
+    <<: *java-service
+    build: { context: ., args: { MODULE: ledger-service } }
+    image: flyermiles/ledger-service:dev
+    ports: ["8082:8082"]
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: ledger-service
+      LEDGER_DB_URL: jdbc:postgresql://postgres:5432/ledger
+      LISTENER_CONCURRENCY: 6
+
+  redemption-service:
+    <<: *java-service
+    build: { context: ., args: { MODULE: redemption-service } }
+    image: flyermiles/redemption-service:dev
+    ports: ["8083:8083"]
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: redemption-service
+      REDEMPTION_DB_URL: jdbc:postgresql://postgres:5432/redemptions
+      LEDGER_URL: http://ledger-service:8082
+
+  query-service:
+    <<: *java-service
+    build: { context: ., args: { MODULE: query-service } }
+    image: flyermiles/query-service:dev
+    ports: ["8084:8084"]
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: query-service
+      QUERY_DB_URL: jdbc:postgresql://postgres:5432/query
+      REDIS_HOST: redis
+
+  earning-engine:
+    <<: *java-service
+    build: { context: ., args: { MODULE: earning-engine } }
+    image: flyermiles/earning-engine:dev
+    # no host port, so it can be scaled; Prometheus finds every replica through Docker DNS
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: earning-engine
+      STATE_DIR: /tmp/kafka-streams
+
+  flight-activity-simulator:
+    <<: *java-service
+    build: { context: ., args: { MODULE: flight-activity-simulator } }
+    image: flyermiles/flight-activity-simulator:dev
+    ports: ["8085:8085"]
+    environment:
+      <<: *java-env
+      OTEL_SERVICE_NAME: flight-activity-simulator
+      MEMBER_SERVICE_URL: http://member-service:8081
+
+  reconciliation-job:
+    build: { context: ., args: { MODULE: reconciliation-job } }
+    image: flyermiles/reconciliation-job:dev
+    profiles: [tools]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      LEDGER_DB_URL: jdbc:postgresql://postgres:5432/ledger
+      QUERY_DB_URL: jdbc:postgresql://postgres:5432/query
+      DB_USER: flyermiles
+      DB_PASSWORD: flyermiles
+      PUSHGATEWAY_URL: http://pushgateway:9091
+      JAVA_TOOL_OPTIONS: -Xmx512m
+
+  # ---------------------------------------------------------------- monitoring
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    profiles: [obs]
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deploy/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports: ["4317:4317", "4318:4318"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: [obs]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ["9090:9090"]
+
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    profiles: [obs]
+    ports: ["9091:9091"]
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    profiles: [obs]
+    command: ["--kafka.server=kafka:9092"]
+    depends_on:
+      kafka: { condition: service_healthy }
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.0
+    profiles: [obs]
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./deploy/observability/loki.yaml:/etc/loki/config.yaml:ro
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    profiles: [obs]
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    volumes:
+      - ./deploy/observability/tempo.yaml:/etc/tempo/config.yaml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    profiles: [obs]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]

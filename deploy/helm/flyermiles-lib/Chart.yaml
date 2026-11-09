@@ -1,0 +1,5 @@
+apiVersion: v2
+name: flyermiles-lib
+description: Shared templates for FlyerMiles service charts (Deployment, Service, PDB, ConfigMap, Secret, ServiceMonitor)
+type: library
+version: 0.1.0

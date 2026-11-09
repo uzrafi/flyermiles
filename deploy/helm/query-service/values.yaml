@@ -1,0 +1,56 @@
+global:
+  kafkaBootstrap: flyermiles-kafka-bootstrap:9092
+  registryUrl: http://apicurio:8080/apis/registry/v2
+  otel:
+    enabled: true
+    endpoint: http://otel-collector.monitoring:4317
+
+image:
+  repository: flyermiles/query-service
+  tag: dev
+  pullPolicy: IfNotPresent
+
+replicas: 1
+port: 8084
+javaOpts: "-Xms128m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+
+# Name of the Strimzi KafkaUser whose SCRAM secret this service authenticates with.
+kafkaUser: query-service
+
+database:
+  user: flyermiles
+  password: flyermiles
+
+# Non-secret settings, mounted as environment variables through a ConfigMap.
+config:
+  QUERY_DB_URL: "jdbc:postgresql://postgres:5432/query"
+  REDIS_HOST: "redis"
+  LISTENER_CONCURRENCY: "1"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 400Mi
+  limits:
+    memory: 512Mi
+
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+serviceMonitor:
+  enabled: true
+
+terminationGracePeriodSeconds: 45
+
+# KEDA scales on consumer lag of ledger.events, never beyond the partition count (extra
+# consumers in a group would sit idle with no partition to read).
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 6
+  lagThreshold: "2000"
+  consumerGroup: query-service
+  topic: ledger.events
+  pollingInterval: 5
+  cooldownPeriod: 60

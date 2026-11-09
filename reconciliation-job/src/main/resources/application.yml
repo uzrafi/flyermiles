@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: reconciliation-job
+  main:
+    web-application-type: none
+    banner-mode: off
+
+recon:
+  ledger-db-url: ${LEDGER_DB_URL:jdbc:postgresql://localhost:5432/ledger}
+  query-db-url: ${QUERY_DB_URL:jdbc:postgresql://localhost:5432/query}
+  db-user: ${DB_USER:flyermiles}
+  db-password: ${DB_PASSWORD:flyermiles}
+  kafka-bootstrap: ${KAFKA_BOOTSTRAP:localhost:9094}
+  pushgateway-url: ${PUSHGATEWAY_URL:}
+  settle-timeout: ${SETTLE_TIMEOUT:PT2M}
+  settle-interval: PT5S
+
+logging:
+  level:
+    org.apache.kafka: WARN
