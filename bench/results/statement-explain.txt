@@ -1,0 +1,67 @@
+--- OFFSET 50000, noindex
+  Limit  (cost=11705.89..11706.01 rows=50 width=39) (actual time=38.837..38.842 rows=50 loops=1)
+    Buffers: shared hit=1611, temp read=510 written=615
+    I/O Timings: temp read=0.518 write=4.844
+    ->  Sort  (cost=11580.89..11832.25 rows=100546 width=39) (actual time=35.432..37.813 rows=50050 loops=1)
+          Sort Key: occurred_at DESC, seq DESC
+          Sort Method: external merge  Disk: 4904kB
+          Buffers: shared hit=1611, temp read=510 written=615
+          I/O Timings: temp read=0.518 write=4.844
+          ->  Seq Scan on statement_lines  (cost=0.00..3230.00 rows=100546 width=39) (actual time=2.149..14.946 rows=100000 loops=1)
+                Filter: (member_id = '2ed6ce64-97f9-4aa7-b4e2-98c3233d7361'::uuid)
+                Rows Removed by Filter: 30000
+                Buffers: shared hit=1605
+  Planning:
+    Buffers: shared hit=109
+  Planning Time: 0.480 ms
+  Execution Time: 39.869 ms
+
+--- keyset at the same depth, noindex
+  Limit  (cost=5149.87..5155.62 rows=50 width=39) (actual time=12.136..14.492 rows=50 loops=1)
+    Buffers: shared hit=1620
+    ->  Gather Merge  (cost=5149.87..9327.01 rows=36323 width=39) (actual time=12.135..14.487 rows=50 loops=1)
+          Workers Planned: 1
+          Workers Launched: 1
+          Buffers: shared hit=1620
+          ->  Sort  (cost=4149.86..4240.67 rows=36323 width=39) (actual time=10.514..10.516 rows=50 loops=2)
+                Sort Key: occurred_at DESC, seq DESC
+                Sort Method: top-N heapsort  Memory: 32kB
+                Buffers: shared hit=1620
+                Worker 0:  Sort Method: top-N heapsort  Memory: 32kB
+                ->  Parallel Seq Scan on statement_lines  (cost=0.00..2943.24 rows=36323 width=39) (actual time=1.199..7.615 rows=25000 loops=2)
+                      Filter: ((member_id = '2ed6ce64-97f9-4aa7-b4e2-98c3233d7361'::uuid) AND (ROW(occurred_at, seq) < ROW('2026-11-09 03:18:54.823+00'::timestamp with time zone, 50000)))
+                      Rows Removed by Filter: 40000
+                      Buffers: shared hit=1605
+  Planning:
+    Buffers: shared hit=106
+  Planning Time: 0.510 ms
+  Execution Time: 14.598 ms
+
+--- OFFSET 50000, index
+  Limit  (cost=2760.27..2763.03 rows=50 width=39) (actual time=11.727..11.742 rows=50 loops=1)
+    Buffers: shared hit=1 read=471
+    I/O Timings: shared read=4.189
+    ->  Index Only Scan using statement_lines_keyset_idx on statement_lines  (cost=0.42..5535.19 rows=100273 width=39) (actual time=0.082..10.382 rows=50050 loops=1)
+          Index Cond: (member_id = '2ed6ce64-97f9-4aa7-b4e2-98c3233d7361'::uuid)
+          Heap Fetches: 0
+          Buffers: shared hit=1 read=471
+          I/O Timings: shared read=4.189
+  Planning:
+    Buffers: shared hit=141
+  Planning Time: 1.009 ms
+  Execution Time: 11.779 ms
+
+--- keyset at the same depth, index
+  Limit  (cost=0.42..3.30 rows=50 width=39) (actual time=0.089..0.106 rows=50 loops=1)
+    Buffers: shared hit=4 read=1
+    I/O Timings: shared read=0.011
+    ->  Index Only Scan using statement_lines_keyset_idx on statement_lines  (cost=0.42..3562.20 rows=61689 width=39) (actual time=0.088..0.102 rows=50 loops=1)
+          Index Cond: ((member_id = '2ed6ce64-97f9-4aa7-b4e2-98c3233d7361'::uuid) AND (ROW(occurred_at, seq) < ROW('2026-11-09 03:18:54.823+00'::timestamp with time zone, 50000)))
+          Heap Fetches: 0
+          Buffers: shared hit=4 read=1
+          I/O Timings: shared read=0.011
+  Planning:
+    Buffers: shared hit=138
+  Planning Time: 0.740 ms
+  Execution Time: 0.158 ms
+

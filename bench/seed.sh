@@ -14,6 +14,6 @@ if (( existing < N )); then
   done
 fi
 curl -sf -X POST "$SIM/simulator/members/reload?limit=$N" >/dev/null
-log "producing $((N * 3)) flights so every member has a balance"
-curl -sf -X POST "$SIM/simulator/burst?count=$((N * 3))" && echo
+log "producing $((N * 10)) flights so every member has a balance"
+curl -sf -X POST "$SIM/simulator/burst?count=$((N * 10))" && echo
 wait_projection 600

@@ -1,13 +1,9 @@
 package dev.flyermiles.simulator;
 
-import dev.flyermiles.avro.Topics;
 import java.util.Map;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,12 +16,6 @@ public class SimulatorApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(SimulatorApplication.class, args);
-  }
-
-  /** Same partition count as member.profiles: required for the stream-table join. */
-  @Bean
-  NewTopic flightCompleted() {
-    return TopicBuilder.name(Topics.FLIGHT_COMPLETED).partitions(6).build();
   }
 
   @RestController

@@ -4,6 +4,9 @@ server:
   tomcat:
     threads:
       max: 400
+    # A burst of simultaneous clients must queue, not be refused (the default backlog is 100).
+    accept-count: 2000
+    max-connections: 10000
 
 spring:
   application:

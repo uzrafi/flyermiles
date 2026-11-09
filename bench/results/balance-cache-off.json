@@ -1,0 +1,9 @@
+{
+  "label": "cache-off",
+  "requests": 119859,
+  "rps": 1997,
+  "p50_ms": 0.52,
+  "p95_ms": 0.56,
+  "p99_ms": 2.09,
+  "failed_rate": 0
+}

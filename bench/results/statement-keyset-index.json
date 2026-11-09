@@ -1,0 +1,9 @@
+{
+  "label": "keyset-index",
+  "mode": "keyset",
+  "pages": 2001,
+  "requests": 307529,
+  "p50_ms": 1.11,
+  "p95_ms": 2.5,
+  "p99_ms": 4.76
+}

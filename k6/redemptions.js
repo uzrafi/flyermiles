@@ -26,7 +26,8 @@ export default function () {
   const params = { headers: { "Content-Type": "application/json", "Idempotency-Key": key }, tags: { name: "redeem" } };
   for (let attempt = 0; attempt < 50; attempt++) {
     const res = http.post(`${REDEEM}/redemptions`, body, params);
-    if (res.status === 503) {
+    // 503 = gave up under contention; 0 = connection not accepted. Both are safe to retry with the same key.
+    if (res.status === 503 || res.status === 0) {
       retried.add(1);
       sleep(Math.random() * 0.05);
       continue;

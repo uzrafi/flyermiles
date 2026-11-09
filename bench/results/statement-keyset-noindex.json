@@ -1,0 +1,9 @@
+{
+  "label": "keyset-noindex",
+  "mode": "keyset",
+  "pages": 2001,
+  "requests": 20807,
+  "p50_ms": 21.37,
+  "p95_ms": 30.31,
+  "p99_ms": 32.76
+}

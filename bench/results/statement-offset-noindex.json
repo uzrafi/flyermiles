@@ -1,0 +1,9 @@
+{
+  "label": "offset-noindex",
+  "mode": "offset",
+  "pages": 2001,
+  "requests": 10914,
+  "p50_ms": 41.26,
+  "p95_ms": 47.91,
+  "p99_ms": 52.73
+}

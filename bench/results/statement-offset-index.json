@@ -1,0 +1,9 @@
+{
+  "label": "offset-index",
+  "mode": "offset",
+  "pages": 2001,
+  "requests": 73505,
+  "p50_ms": 5.87,
+  "p95_ms": 10.98,
+  "p99_ms": 12.4
+}

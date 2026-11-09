@@ -1,0 +1,7 @@
+{
+  "concurrent": 1000,
+  "accepted": 632,
+  "rejected_insufficient": 367,
+  "retried_503": 3060,
+  "p95_ms": 9932.76
+}
