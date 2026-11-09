@@ -16,4 +16,4 @@ tempo:
         processors: [service-graphs, span-metrics]
   resources:
     requests: { cpu: 100m, memory: 256Mi }
-    limits: { memory: 1Gi }
+    limits: { memory: 2Gi }

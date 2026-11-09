@@ -39,12 +39,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 - name: DB_USER
   valueFrom:
     secretKeyRef:
-      name: {{ include "flyermiles-lib.name" . }}
+      name: {{ include "flyermiles-lib.name" . }}-db
       key: DB_USER
 - name: DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: {{ include "flyermiles-lib.name" . }}
+      name: {{ include "flyermiles-lib.name" . }}-db
       key: DB_PASSWORD
 {{- end }}
 - name: OTEL_JAVAAGENT_ENABLED
@@ -55,6 +55,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   value: {{ .Values.global.otel.endpoint | quote }}
 - name: OTEL_RESOURCE_ATTRIBUTES
   value: "deployment.environment=kind,k8s.namespace.name=$(POD_NAMESPACE),k8s.pod.name=$(POD_NAME)"
+# Keep 10% of traces (parent-based: a sampled trace is complete across every service). 100% of a
+# million-event burst overwhelms a single Tempo.
+- name: OTEL_TRACES_SAMPLER
+  value: parentbased_traceidratio
+- name: OTEL_TRACES_SAMPLER_ARG
+  value: {{ .Values.global.otel.traceSampleRatio | default "0.1" | quote }}
 {{- end -}}
 
 {{- define "flyermiles-lib.podEnv" -}}

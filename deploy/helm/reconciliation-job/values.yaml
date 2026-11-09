@@ -4,7 +4,7 @@ image:
   pullPolicy: IfNotPresent
 
 schedule: "0 3 * * *"
-kafkaBootstrap: flyermiles-kafka-bootstrap:9092
+kafkaBootstrap: flyermiles-kafka-bootstrap.flyermiles.svc:9092
 kafkaUser: reconciliation
 pushgatewayUrl: http://pushgateway-prometheus-pushgateway.monitoring:9091
 settleTimeout: PT3M

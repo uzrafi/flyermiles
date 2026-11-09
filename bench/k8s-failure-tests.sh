@@ -48,7 +48,12 @@ log "3/4 kill the query-service during a read-model rebuild"
 kubectl -n $NS scale deploy/query-service --replicas=1   # rebuild needs a single consumer
 kubectl -n $NS patch scaledobject query-service --type merge -p '{"metadata":{"annotations":{"autoscaling.keda.sh/paused-replicas":"1"}}}'
 kubectl -n $NS rollout status deploy/query-service
-curl -sf -X POST "$QUERY/admin/rebuild" >/dev/null; sleep 5
+sleep 10
+# A dedicated forward to the single remaining pod (the shared one may point at a pod that is gone).
+kubectl -n $NS port-forward deploy/query-service 18084:8084 >/dev/null 2>&1 & pf=$!
+sleep 3
+curl -sf -X POST "http://localhost:18084/admin/rebuild" | tee bench/results/k8s-rebuild-started.json; echo
+sleep 5; kill $pf 2>/dev/null || true
 kubectl -n $NS delete pod -l app.kubernetes.io/name=query-service --wait=false
 kubectl -n $NS rollout status deploy/query-service
 # The replacement pod resumes from the committed offsets; the idempotent projection absorbs replays.

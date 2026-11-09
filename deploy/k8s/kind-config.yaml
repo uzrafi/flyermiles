@@ -1,8 +1,13 @@
 # 3 nodes so replicas and the 3 Kafka brokers actually spread out.
+# Pinned to Kubernetes 1.34: from 1.35 the kubelet refuses to start on cgroup v1, which is what Docker
+# Desktop provides on older WSL2 kernels (5.15). With cgroup v2 (`wsl --update`), any recent image works.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: flyermiles
 nodes:
   - role: control-plane
+    image: kindest/node:v1.34.3
   - role: worker
+    image: kindest/node:v1.34.3
   - role: worker
+    image: kindest/node:v1.34.3

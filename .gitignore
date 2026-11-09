@@ -9,3 +9,4 @@ bench/results/raw/
 .env
 deploy/helm/*/charts/
 deploy/helm/*/Chart.lock
+bench/results/raw-*

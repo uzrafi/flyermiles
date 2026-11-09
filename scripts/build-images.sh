@@ -6,7 +6,8 @@ cd "$(dirname "$0")/.."
 MODULES=(member-service ledger-service redemption-service query-service earning-engine flight-activity-simulator reconciliation-job)
 TAG="${TAG:-dev}"
 
-./mvnw -q -B -DskipTests package
+# env -u: the Maven wrapper on Windows relies on Git Bash path conversion, which callers may disable.
+env -u MSYS_NO_PATHCONV ./mvnw -q -B -DskipTests package
 
 for m in "${MODULES[@]}"; do
   echo "==> flyermiles/$m:$TAG"

@@ -1,5 +1,5 @@
 global:
-  kafkaBootstrap: flyermiles-kafka-bootstrap:9092
+  kafkaBootstrap: flyermiles-kafka-bootstrap.flyermiles.svc:9092
   registryUrl: http://apicurio:8080/apis/registry/v2
   otel:
     enabled: true

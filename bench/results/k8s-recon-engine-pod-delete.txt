@@ -1,0 +1,59 @@
+RECONCILIATION {
+  "ok" : true,
+  "mismatches" : 0,
+  "passes" : 1,
+  "elapsedMs" : 8214,
+  "checks" : {
+    "flights_vs_points_earned" : {
+      "name" : "flights_vs_points_earned",
+      "expected" : 1415055,
+      "actual" : 1415055
+    },
+    "points_earned_vs_ledger_earned_entries" : {
+      "name" : "points_earned_vs_ledger_earned_entries",
+      "expected" : 1415055,
+      "actual" : 1415055
+    },
+    "ledger_overdrafts" : {
+      "name" : "ledger_overdrafts",
+      "expected" : 0,
+      "actual" : 0
+    },
+    "ledger_member_histories_broken" : {
+      "name" : "ledger_member_histories_broken",
+      "expected" : 0,
+      "actual" : 0
+    },
+    "ledger_net_vs_read_model_balances" : {
+      "name" : "ledger_net_vs_read_model_balances",
+      "expected" : 9798119941,
+      "actual" : 9798119941
+    },
+    "ledger_entries_vs_statement_lines" : {
+      "name" : "ledger_entries_vs_statement_lines",
+      "expected" : 1415055,
+      "actual" : 1415055
+    },
+    "members_with_wrong_balance" : {
+      "name" : "members_with_wrong_balance",
+      "expected" : 0,
+      "actual" : 0
+    }
+  },
+  "totals" : {
+    "flight_completed_records" : 1415055,
+    "points_earned_records" : 1415055,
+    "ledger_entries" : 1415055,
+    "ledger_points_earned" : 9798119941,
+    "ledger_points_redeemed" : 0,
+    "ledger_points_reversed" : 0,
+    "read_model_balance_total" : 9798119941,
+    "read_model_statement_lines" : 1415055,
+    "members" : 5000
+  }
+}
+2026-11-09T04:35:10.255Z  INFO 1 --- [reconciliation-job] [           main] d.f.recon.ReconciliationJob$Runner       : pushed metrics to http://pushgateway-prometheus-pushgateway.monitoring:9091 (200)
+2026-11-09T04:35:10.256Z  INFO 1 --- [reconciliation-job] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2026-11-09T04:35:10.257Z  INFO 1 --- [reconciliation-job] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2026-11-09T04:35:10.257Z  INFO 1 --- [reconciliation-job] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-09T04:35:10.258Z  INFO 1 --- [reconciliation-job] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

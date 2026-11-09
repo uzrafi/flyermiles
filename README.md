@@ -9,7 +9,21 @@ runs on **Kubernetes** with Kafka managed by the **Strimzi** operator, autoscale
 
 FlyerMiles is a fictional program; no real airline's data or branding is used.
 
-Measured results are in [docs/benchmarks.md](docs/benchmarks.md).
+## Results (measured)
+
+All on a single laptop. Method, raw output and caveats are in [docs/benchmarks.md](docs/benchmarks.md)
+and [docs/kubernetes.md](docs/kubernetes.md).
+
+| | |
+|---|---|
+| End-to-end earn latency at 1,000 flights/s (flight → balance updated) | p50 **123 ms**, p95 **171 ms**, p99 194 ms |
+| Kafka Streams throughput, exactly-once, 6 partitions/instances | **~48,000 events/s** (single broker) |
+| Statement page p95 on a 100k-entry account: `OFFSET` → keyset + covering index | **47.9 ms → 2.5 ms** |
+| Balance reads served from Redis | **95.9%** hit rate (96% fewer Postgres reads) |
+| 1,000 concurrent redemptions on one account | **0 overdrafts**; accepted exactly what the balance allowed |
+| Pod kill, broker rolling restart, kill during rebuild, rolling update (Kubernetes, under load) | **0 events lost or duplicated** across 1.49M flights |
+| KEDA scale-out on a 1M-event backlog | 1 → **5 replicas**, backlog drained in **~47 s** |
+| Read-model rebuild from `ledger.events` | 260,887 entries in **25.4 s** |
 
 ## Architecture
 
@@ -99,7 +113,7 @@ Tempo, and from a span to its log lines in Loki.
 
 ## Running it
 
-Prerequisites: JDK 21, Docker Desktop (12–16 GB of memory), and for Kubernetes: kind, kubectl, Helm,
+Prerequisites: JDK 21, Docker Desktop (16 GB of memory), and for Kubernetes: kind, kubectl, Helm,
 and k6 for the load tests.
 
 ### Docker Compose (development, benchmarks)
@@ -118,7 +132,7 @@ Grafana is at http://localhost:3000.
 ### Kubernetes (kind, 3 nodes)
 
 ```bash
-scripts/k8s-up.sh       # cluster, Strimzi, KEDA, monitoring stack, images, all charts
+scripts/k8s-up.sh       # kind (k8s 1.34), Strimzi 0.48 + Kafka 4.1, KEDA, monitoring, images, all charts
 scripts/port-forward.sh # Grafana on :3000, APIs on :8081-8085
 ```
 

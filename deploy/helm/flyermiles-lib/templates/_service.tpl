@@ -39,7 +39,8 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "flyermiles-lib.name" . }}
+  # "-db": the plain service name is taken by the Strimzi KafkaUser secret.
+  name: {{ include "flyermiles-lib.name" . }}-db
   labels:
     {{- include "flyermiles-lib.labels" . | nindent 4 }}
 type: Opaque

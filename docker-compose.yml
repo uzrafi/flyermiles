@@ -22,6 +22,8 @@ x-java-service: &java-service
     OTEL_JAVAAGENT_ENABLED: ${OTEL_ENABLED:-true}
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     OTEL_RESOURCE_ATTRIBUTES: deployment.environment=compose
+    OTEL_TRACES_SAMPLER: parentbased_traceidratio
+    OTEL_TRACES_SAMPLER_ARG: ${TRACE_SAMPLE_RATIO:-0.1}
 
 services:
   postgres:

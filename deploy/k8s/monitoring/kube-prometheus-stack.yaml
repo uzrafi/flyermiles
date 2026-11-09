@@ -48,7 +48,7 @@ grafana:
       uid: tempo
       type: tempo
       access: proxy
-      url: http://tempo.monitoring:3100
+      url: http://tempo.monitoring:3200
       jsonData:
         serviceMap:
           datasourceUid: prometheus

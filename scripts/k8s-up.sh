@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-STRIMZI_VERSION=0.44.0
+STRIMZI_VERSION=0.48.0
 KEDA_VERSION=2.15.1
 NS=flyermiles
 
