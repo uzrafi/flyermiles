@@ -31,8 +31,9 @@ public class EarningEngineApplication {
   }
 
   /** Apicurio-backed serdes configured from {@code spring.kafka.properties} (registry URL etc.). */
+  /** Static so it can be injected into this class's own {@link #buildTopology} without a cycle. */
   @Bean
-  AvroSerdes avroSerdes(KafkaProperties kafka) {
+  static AvroSerdes avroSerdes(KafkaProperties kafka) {
     Map<String, Object> config = new HashMap<>(kafka.getProperties());
     return new AvroSerdes() {
       @Override
